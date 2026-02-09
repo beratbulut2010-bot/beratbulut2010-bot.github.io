@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith | Ultra Premium Kişisel Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --accent: #22d3ee;
+            --bg-dark: #0f172a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --neon-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* --- Animasyonlu Arka Plan --- */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* --- Layout --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            animation: fadeInDown 1s ease;
+        }
+
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 3rem;
+            background: linear-gradient(to right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .disclaimer {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* --- Dashboard Grid --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.07);
+            border-color: var(--primary);
+            box-shadow: var(--neon-shadow);
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .card-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* --- Bölümler (Gizli Başlar) --- */
+        .section-view {
+            display: none;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .active { display: block; }
+
+        .back-btn {
+            background: none;
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            transition: 0.3s;
+        }
+
+        .back-btn:hover { background: var(--primary); }
+
+        /* --- Mood Journal --- */
+        .mood-selector {
+            display: flex;
+            justify-content: space-around;
+            margin: 2rem 0;
+        }
+
+        .mood-item {
+            font-size: 2rem;
+            padding: 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            background: var(--glass);
+        }
+
+        .mood-item.selected {
+            background: var(--primary);
+            transform: scale(1.2);
+            box-shadow: var(--neon-shadow);
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 1rem;
+            color: white;
+            resize: none;
+            margin-bottom: 1rem;
+        }
+
+        .btn-glow {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        .btn-glow:hover { opacity: 0.9; transform: scale(1.02); }
+
+        /* --- Test Alanı --- */
+        .question-box {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        .opt-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.8rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .opt-btn.active {
+            background: var(--accent);
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* --- Mini Oyun --- */
+        #reaction-area {
+            height: 300px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            background: #ef4444;
+            user-select: none;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .container { padding: 1rem; }
+            .options-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+    <div class="noise"></div>
+
+    <div class="container">
+        <header>
+            <div class="disclaimer">Premium Awareness Portal v2.6</div>
+            <h1>ZENITH</h1>
+            <p style="color: var(--text-dim)">Zihnini Keşfet, Potansiyelini Yönet</p>
+        </header>
+
+        <main id="main-dashboard" class="section-view active">
+            <div class="dashboard-grid">
+                <div class="glass-card" onclick="showSection('test-center')">
+                    <span class="card-icon">🧠</span>
+                    <h3 class="card-title">Test Merkezi</h3>
+                    <p style="color: var(--text-dim)">Dopamin ve odak analizi yapın.</p>
+                </div>
+                <div class="glass-card" onclick="showSection('mood-journal')">
+                    <span class="card-icon">📝</span>
+                    <h3 class="card-title">Günlük Rapor</h3>
+                    <p style="color: var(--text-dim)">Ruh halinizi ve notlarınızı saklayın.</p>
+                </div>
+                <div class="glass-card" onclick="showSection('challenge-zone')">
+                    <span class="card-icon">🎯</span>
+                    <h3 class="card-title">Challenge</h3>
+                    <p style="color: var(--text-dim)">Bugün için rastgele bir görev al.</p>
+                </div>
+                <div class="glass-card" onclick="showSection('game-zone')">
+                    <span class="card-icon">🎮</span>
+                    <h3 class="card-title">Reaksiyon Testi</h3>
+                    <p style="color: var(--text-dim)">Reflekslerini profesyonelce ölç.</p>
+                </div>
+                <div class="glass-card" onclick="showSection('info-hub')">
+                    <span class="card-icon">📚</span>
+                    <h3 class="card-title">Bilgi Merkezi</h3>
+                    <p style="color: var(--text-dim)">Nörobilim hakkında kısa bilgiler.</p>
+                </div>
+            </div>
+            <p style="text-align:center; margin-top:3rem; opacity:0.5; font-size:0.7rem;">
+                ⚠️ BU UYGULAMA TIBBİ BİR TEST DEĞİLDİR. FARKINDALIK AMAÇLIDIR.
+            </p>
+        </main>
+
+        <section id="test-center" class="section-view">
+            <button class="back-btn" onclick="showSection('main-dashboard')">← Geri Dön</button>
+            <div class="glass-card">
+                <h2 class="card-title">Dopamin Alışkanlık Testi</h2>
+                <div id="quiz-container">
+                    </div>
+                <button class="btn-glow" id="finish-test" style="display:none;" onclick="calculateResults()">Sonuçları Gör</button>
+                
+                <div id="results-area" style="display:none; margin-top:2rem;">
+                    <canvas id="resultsChart" style="max-height: 300px;"></canvas>
+                    <div id="result-text" style="margin-top:2rem; text-align:center; line-height:1.6;"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="mood-journal" class="section-view">
+            <button class="back-btn" onclick="showSection('main-dashboard')">← Geri Dön</button>
+            <div class="glass-card">
+                <h2 class="card-title">Bugün Nasıl Hissediyorsun?</h2>
+                <div class="mood-selector">
+                    <div class="mood-item" onclick="selectMood(this, 'Mutlu')">😀</div>
+                    <div class="mood-item" onclick="selectMood(this, 'İyi')">🙂</div>
+                    <div class="mood-item" onclick="selectMood(this, 'Normal')">😐</div>
+                    <div class="mood-item" onclick="selectMood(this, 'Düşük')">😔</div>
+                    <div class="mood-item" onclick="selectMood(this, 'Yorgun')">😴</div>
+                </div>
+                <textarea id="mood-note" placeholder="Bugün nasıl geçti? Günün hakkında kısa not yaz..."></textarea>
+                <div style="display:flex; gap:1rem;">
+                    <button class="btn-glow" onclick="saveMood()">Kaydet</button>
+                    <button class="back-btn" style="margin-bottom:0;" onclick="clearMoods()">Temizle</button>
+                </div>
+
+                <div id="mood-history" style="margin-top:2rem;">
+                    </div>
+            </div>
+        </section>
+
+        <section id="challenge-zone" class="section-view">
+            <button class="back-btn" onclick="showSection('main-dashboard')">← Geri Dön</button>
+            <div class="glass-card" style="text-align:center;">
+                <h2 class="card-title">Günün Görevi</h2>
+                <div id="challenge-box" style="font-size:1.5rem; margin:2rem 0; font-weight:bold; color:var(--accent);">
+                    ...
+                </div>
+                <button class="btn-glow" onclick="completeChallenge()">Tamamladım!</button>
+                <button class="back-btn" style="margin-top:1rem" onclick="generateChallenge()">Yeni Görev Ver</button>
+            </div>
+        </section>
+
+        <section id="game-zone" class="section-view">
+            <button class="back-btn" onclick="showSection('main-dashboard')">← Geri Dön</button>
+            <div class="glass-card">
+                <h2 class="card-title">Reaksiyon Testi</h2>
+                <p style="margin-bottom:1rem; opacity:0.7;">Ekran YEŞİL olduğunda en hızlı şekilde dokun!</p>
+                <div id="reaction-area" onclick="handleReactionClick()">DOKUN VE BAŞLA</div>
+                <div id="game-result" style="margin-top:1rem; font-size:1.2rem; text-align:center;"></div>
+            </div>
+        </section>
+
+        <section id="info-hub" class="section-view">
+            <button class="back-btn" onclick="showSection('main-dashboard')">← Geri Dön</button>
+            <div class="dashboard-grid">
+                <div class="glass-card">
+                    <h3>Dopamin Nedir?</h3>
+                    <p style="font-size:0.9rem; margin-top:0.5rem; color:var(--text-dim)">Beynin ödül kimyasalıdır. Motivasyon ve öğrenme süreçlerini yönetir.</p>
+                </div>
+                <div class="glass-card">
+                    <h3>Odaklanma Sanatı</h3>
+                    <p style="font-size:0.9rem; margin-top:0.5rem; color:var(--text-dim)">Derin odaklanma için dijital gürültüyü azaltmak ve tek bir işe odaklanmak şarttır.</p>
+                </div>
+                <div class="glass-card">
+                    <h3>Sağlıklı Rutin</h3>
+                    <p style="font-size:0.9rem; margin-top:0.5rem; color:var(--text-dim)">Güneş ışığı, protein bazlı kahvaltı ve sabah yürüyüşü dopamin sistemini dengeler.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // --- ARKA PLAN PARTİKÜL SİSTEMİ ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.onresize = resize;
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = `rgba(99, 102, 241, ${Math.random() * 0.3})`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if(this.x > canvas.width) this.x = 0;
+                if(this.x < 0) this.x = canvas.width;
+                if(this.y > canvas.height) this.y = 0;
+                if(this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for(let i=0; i<50; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- NAVİGASYON ---
+        function showSection(id) {
+            document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            
+            if(id === 'challenge-zone') generateChallenge();
+            if(id === 'mood-journal') renderMoods();
+        }
+
+        // --- TEST MERKEZİ SİSTEMİ ---
+        const questions = [
+            { q: "Günlük sosyal medya kullanım süreniz?", options: ["4+ Saat", "2-4 Saat", "1-2 Saat", "30dk Altı"] },
+            { q: "Kısa video (Reels/TikTok) tüketim sıklığınız?", options: ["Sürekli", "Sık sık", "Bazen", "Çok nadir"] },
+            { q: "Egzersiz yapma sıklığınız?", options: ["Hiç", "Haftada 1", "Haftada 3", "Her gün"] },
+            { q: "Uyku düzeniniz nasıl?", options: ["Çok düzensiz", "Zayıf", "İyi", "Mükemmel"] },
+            { q: "Odaklanma süreniz (tek bir işte)?", options: ["5 dk", "15 dk", "30 dk", "60+ dk"] },
+            { q: "Küçük şeylerden (doğa, sohbet) keyif alma?", options: ["Çok zor", "Bazen", "Genelde", "Her zaman"] }
+        ];
+
+        let userAnswers = new Array(questions.length).fill(null);
+
+        function initQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = questions.map((item, qIdx) => `
+                <div class="question-box">
+                    <p><strong>${qIdx+1}. ${item.q}</strong></p>
+                    <div class="options-grid">
+                        ${item.options.map((opt, oIdx) => `
+                            <button class="opt-btn" onclick="selectOption(${qIdx}, ${oIdx+1}, this)">${opt}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        initQuiz();
+
+        function selectOption(qIdx, score, btn) {
+            userAnswers[qIdx] = score;
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            if(!userAnswers.includes(null)) {
+                document.getElementById('finish-test').style.display = 'block';
+            }
+        }
+
+        function calculateResults() {
+            const total = userAnswers.reduce((a,b) => a+b, 0);
+            const max = questions.length * 4;
+            const percentage = Math.round((total / max) * 100);
+
+            document.getElementById('results-area').style.display = 'block';
+            document.getElementById('finish-test').style.display = 'none';
+
+            // Chart.js
+            const ctxChart = document.getElementById('resultsChart').getContext('2d');
+            new Chart(ctxChart, {
+                type: 'bar',
+                data: {
+                    labels: ['Sosyal Medya', 'İçerik', 'Egzersiz', 'Uyku', 'Odak', 'Keyif'],
+                    datasets: [{
+                        label: 'Skor',
+                        data: userAnswers,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true, max: 4 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            let feedback = percentage > 80 ? "Mükemmel! Dopamin dengeniz çok sağlıklı." : 
+                           percentage > 50 ? "İyi durumdasınız ama dijital detoks işe yarayabilir." : 
+                           "Dikkat! Dopamin sisteminiz yorgun olabilir.";
+            
+            document.getElementById('result-text').innerHTML = `
+                <h2 style="color:var(--accent)">%${percentage} Verimlilik</h2>
+                <p>${feedback}</p>
+            `;
+        }
+
+        // --- MOOD JOURNAL SİSTEMİ ---
+        let selectedMoodStr = "";
+        function selectMood(el, mood) {
+            document.querySelectorAll('.mood-item').forEach(m => m.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedMoodStr = mood;
+        }
+
+        function saveMood() {
+            const note = document.getElementById('mood-note').value;
+            if(!selectedMoodStr || !note) { alert("Lütfen mood seçin ve not yazın."); return; }
+
+            const entry = {
+                mood: selectedMoodStr,
+                note: note,
+                time: new Date().toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'}),
+                date: new Date().toLocaleDateString('tr-TR')
+            };
+
+            let history = JSON.parse(localStorage.getItem('zenith_moods') || '[]');
+            history.unshift(entry);
+            localStorage.setItem('zenith_moods', JSON.stringify(history.slice(0, 5)));
+            
+            document.getElementById('mood-note').value = "";
+            renderMoods();
+            confetti();
+        }
+
+        function renderMoods() {
+            const history = JSON.parse(localStorage.getItem('zenith_moods') || '[]');
+            const container = document.getElementById('mood-history');
+            container.innerHTML = history.map(h => `
+                <div class="glass-card" style="margin-bottom:1rem; padding:1rem; border-left:4px solid var(--accent);">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-dim);">
+                        <span>${h.date} - ${h.time}</span>
+                        <span>${h.mood}</span>
+                    </div>
+                    <p style="margin-top:0.5rem;">${h.note}</p>
+                </div>
+            `).join('');
+        }
+
+        function clearMoods() { localStorage.removeItem('zenith_moods'); renderMoods(); }
+
+        // --- CHALLENGE SİSTEMİ ---
+        const challenges = [
+            "30 dakika boyunca telefonunu uçak moduna al.",
+            "Sadece 5 dakika derin nefes egzersizi yap.",
+            "Bugün hiç içmediğin kadar su iç (en az 2L).",
+            "Kağıt kalem al ve yarın için 3 ana hedef yaz.",
+            "10 sayfa kitap oku.",
+            "En az 15 dakika dışarıda yürü."
+        ];
+
+        function generateChallenge() {
+            const rand = challenges[Math.floor(Math.random() * challenges.length)];
+            document.getElementById('challenge-box').innerText = rand;
+        }
+
+        function completeChallenge() {
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            document.getElementById('challenge-box').innerHTML = "✨ HARİKA! BUGÜNÜN GÖREVİ TAMAM.";
+        }
+
+        // --- REAKSİYON OYUNU ---
+        let startTime, timeout;
+        let gameActive = false;
+
+        function handleReactionClick() {
+            const area = document.getElementById('reaction-area');
+            const result = document.getElementById('game-result');
+
+            if(!gameActive) {
+                // Başlatma
+                area.style.background = "#eab308";
+                area.innerText = "BEKLE...";
+                result.innerText = "";
+                gameActive = true;
+                
+                const waitTime = Math.random() * 3000 + 2000;
+                timeout = setTimeout(() => {
+                    area.style.background = "#22c55e";
+                    area.innerText = "ŞİMDİ TIKLA!";
+                    startTime = Date.now();
+                }, waitTime);
+            } else {
+                // Tıklama
+                if(area.style.background.includes('rgb(34, 197, 94)')) { // Yeşil ise
+                    const reactionTime = Date.now() - startTime;
+                    area.style.background = "#6366f1";
+                    area.innerText = "BAŞARILI!";
+                    result.innerText = `Süre: ${reactionTime}ms`;
+                    gameActive = false;
+                    if(reactionTime < 250) confetti();
+                } else {
+                    // Erken tıkladı
+                    clearTimeout(timeout);
+                    area.style.background = "#ef4444";
+                    area.innerText = "ÇOK ERKEN!";
+                    result.innerText = "Tekrar denemek için dokun.";
+                    gameActive = false;
+                }
+            }
+        }
+    </script>
+</body>
+</html>
